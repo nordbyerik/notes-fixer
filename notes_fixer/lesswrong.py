@@ -2,27 +2,32 @@
 
 from typing import List
 import requests
-from .types import Config, LessWrongPost
+from .types import Config
 from .ai_processor import AIProcessor
+from .base_scraper import BaseScraper, ScrapedItem
 
 
-class LessWrongIntegration:
-    """Handles fetching and processing LessWrong posts."""
+class LessWrongScraper(BaseScraper):
+    """Scraper for LessWrong posts."""
 
     GRAPHQL_ENDPOINT = "https://www.lesswrong.com/graphql"
 
-    def __init__(self, config: Config, ai_processor: AIProcessor):
-        self.config = config
+    def __init__(self, post_count: int, ai_processor: AIProcessor):
+        self.post_count = post_count
         self.ai_processor = ai_processor
 
-    def fetch_top_posts(self) -> List[LessWrongPost]:
+    @property
+    def name(self) -> str:
+        return "LessWrong"
+
+    def fetch_items(self) -> List[ScrapedItem]:
         """Fetch top recent posts from LessWrong."""
         query = f"""
             query RecentPosts {{
                 posts(input: {{
                     terms: {{
                         view: "magic"
-                        limit: {self.config.lesswrong_post_count}
+                        limit: {self.post_count}
                         filter: "frontpage"
                     }}
                 }}) {{
@@ -59,14 +64,13 @@ class LessWrongIntegration:
             posts = data["data"]["posts"]["results"]
 
             return [
-                LessWrongPost(
-                    id=post["_id"],
+                ScrapedItem(
                     title=post["title"],
                     author=post.get("user", {}).get("displayName", "Unknown"),
                     url=f"https://www.lesswrong.com/posts/{post['_id']}/{post['slug']}",
-                    base_score=post["baseScore"],
-                    posted_at=post["postedAt"],
+                    published_at=post["postedAt"],
                     content=post.get("contents", {}).get("plaintextDescription", ""),
+                    score=post["baseScore"],
                 )
                 for post in posts
             ]
@@ -74,28 +78,25 @@ class LessWrongIntegration:
             print(f"Error fetching LessWrong posts: {e}")
             return []
 
-    def fetch_and_summarize_posts(self) -> str:
-        """Fetch and summarize top posts."""
-        print("Fetching top LessWrong posts...")
-        posts = self.fetch_top_posts()
-
-        if not posts:
+    def format_for_daily_note(self, items: List[ScrapedItem]) -> str:
+        """Format LessWrong posts for daily note with AI summaries."""
+        if not items:
             return "No posts available."
 
-        print(f"Found {len(posts)} posts. Generating summaries...")
+        print(f"Generating summaries for {len(items)} LessWrong posts...")
 
-        summaries: List[str] = []
+        formatted_items: List[str] = []
 
-        for post in posts:
+        for item in items:
             summary = self.ai_processor.summarize_post(
-                post.title, post.url, post.content
+                item.title, item.url, item.content
             )
 
-            formatted_post = f"""### [{post.title}]({post.url})
-**Author:** {post.author} | **Score:** {post.base_score}
+            formatted = f"""### [{item.title}]({item.url})
+**Author:** {item.author} | **Score:** {item.score}
 
 {summary}"""
 
-            summaries.append(formatted_post)
+            formatted_items.append(formatted)
 
-        return "\n\n".join(summaries)
+        return "\n\n".join(formatted_items)

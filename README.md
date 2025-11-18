@@ -1,11 +1,14 @@
 # Obsidian Daily Notes CLI
 
-A powerful CLI tool for managing your daily Obsidian notes with AI-powered knowledge extraction and LessWrong integration.
+A powerful CLI tool for managing your daily Obsidian notes with AI-powered knowledge extraction and multi-source content aggregation.
 
 ## Features
 
 - **AI-Powered Knowledge Extraction**: Automatically extracts important insights, events, and learnings from your daily notes and organizes them into a knowledge repository
-- **LessWrong Integration**: Fetches top posts from LessWrong and adds AI-generated summaries to your daily notes
+- **Multi-Source Content Scrapers**: Extensible scraper system supports:
+  - **LessWrong**: Top community posts with AI summaries
+  - **RSS Feeds**: Any RSS/Atom feed (Hacker News, arXiv, blogs, etc.)
+  - **Easy to extend**: Add custom scrapers for any content source
 - **Model Agnostic**: Use any LLM provider (Claude, GPT, local models via Ollama, etc.) - easily swap models without code changes
 - **Automated Daily Workflow**: Designed to run once per day (via cron) to keep your knowledge base up-to-date
 
@@ -49,16 +52,21 @@ OBSIDIAN_VAULT_PATH=/path/to/your/obsidian/vault
 DAILY_NOTES_FOLDER=Daily Notes
 KNOWLEDGE_REPO_FOLDER=Knowledge Base
 LOOKBACK_DAYS=1
+
+# Content Scrapers
+LESSWRONG_ENABLED=true
 LESSWRONG_POST_COUNT=5
+RSS_FEEDS=https://news.ycombinator.com/rss,http://export.arxiv.org/rss/cs.AI
+RSS_ITEMS_PER_FEED=5
 ```
 
-See the [AI Model Configuration](#ai-model-configuration) section for all supported models.
+See the [AI Model Configuration](#ai-model-configuration) and [Content Scrapers](#content-scrapers) sections for more options.
 
 ## Usage
 
 ### Run Everything (Recommended for Daily Use)
 
-Process recent notes and add LessWrong posts in one command:
+Process recent notes and fetch content from all enabled scrapers:
 
 ```bash
 notes-fixer run
@@ -70,7 +78,7 @@ Or if you didn't install the package:
 python -m notes_fixer run
 ```
 
-### Extract Knowledge Only
+###Extract Knowledge Only
 
 Only extract knowledge from recent daily notes:
 
@@ -78,12 +86,12 @@ Only extract knowledge from recent daily notes:
 notes-fixer extract-knowledge
 ```
 
-### LessWrong Posts Only
+### Fetch Content Only
 
-Only fetch and add LessWrong posts to today's note:
+Fetch content from all enabled scrapers (LessWrong, RSS feeds, etc.) without extracting knowledge:
 
 ```bash
-notes-fixer lesswrong
+notes-fixer fetch-content
 ```
 
 ## Setting Up Daily Automation
@@ -229,6 +237,56 @@ See the [LiteLLM docs](https://docs.litellm.ai/docs/providers) for the complete 
 - **Privacy**: Use local models (Ollama) to keep your notes completely private
 - **Experimentation**: Try different models to see which works best for your use case
 - **Future-proof**: New models supported automatically through LiteLLM updates
+
+## Content Scrapers
+
+The tool includes an extensible scraper system to fetch content from multiple sources. All scrapers use AI to generate summaries before adding content to your daily notes.
+
+### Available Scrapers
+
+**LessWrong**
+
+Fetches top posts from the LessWrong community.
+
+```env
+LESSWRONG_ENABLED=true
+LESSWRONG_POST_COUNT=5
+```
+
+**RSS Feeds**
+
+Fetch from any RSS or Atom feed. Supports multiple feeds (comma-separated).
+
+```env
+RSS_FEEDS=https://news.ycombinator.com/rss,http://export.arxiv.org/rss/cs.AI,https://yourblog.com/feed
+RSS_ITEMS_PER_FEED=5
+```
+
+Popular RSS feeds you might want to add:
+- **Hacker News**: `https://news.ycombinator.com/rss`
+- **arXiv AI**: `http://export.arxiv.org/rss/cs.AI`
+- **arXiv ML**: `http://export.arxiv.org/rss/cs.LG`
+- **MIT News AI**: `https://news.mit.edu/topic/mitartificial-intelligence2-rss.xml`
+- **Y Combinator**: `https://www.ycombinator.com/blog/feed`
+
+To disable a scraper:
+```env
+LESSWRONG_ENABLED=false
+RSS_FEEDS=  # Empty to disable RSS
+```
+
+### Adding Custom Scrapers
+
+The scraper system is extensible! To add a new scraper:
+
+1. Create a class that inherits from `BaseScraper` in `notes_fixer/base_scraper.py`
+2. Implement three methods:
+   - `fetch_items()` - Fetch content from your source
+   - `format_for_daily_note()` - Format items for display
+   - `name` property - Return the scraper name
+3. Add your scraper to `__main__.py` in the `cmd_run()` and `cmd_fetch_content()` functions
+
+See `notes_fixer/lesswrong.py` and `notes_fixer/rss_scraper.py` for examples.
 
 ## Development
 

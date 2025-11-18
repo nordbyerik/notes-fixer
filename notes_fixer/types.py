@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 
 @dataclass
@@ -15,6 +15,9 @@ class Config:
     knowledge_repo_folder: str
     lookback_days: int
     lesswrong_post_count: int
+    lesswrong_enabled: bool
+    rss_feed_urls: List[str]
+    rss_items_per_feed: int
 
 
 @dataclass

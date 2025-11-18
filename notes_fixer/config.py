@@ -24,6 +24,13 @@ def load_config() -> Config:
     if not vault_path:
         raise ValueError("OBSIDIAN_VAULT_PATH environment variable is required")
 
+    # RSS feed configuration
+    rss_feeds_str = os.getenv("RSS_FEEDS", "")
+    rss_feed_urls = [url.strip() for url in rss_feeds_str.split(",") if url.strip()]
+
+    # LessWrong configuration
+    lesswrong_enabled = os.getenv("LESSWRONG_ENABLED", "true").lower() in ("true", "1", "yes")
+
     return Config(
         ai_model=ai_model,
         ai_api_key=ai_api_key,
@@ -32,4 +39,7 @@ def load_config() -> Config:
         knowledge_repo_folder=os.getenv("KNOWLEDGE_REPO_FOLDER", "Knowledge Base"),
         lookback_days=int(os.getenv("LOOKBACK_DAYS", "1")),
         lesswrong_post_count=int(os.getenv("LESSWRONG_POST_COUNT", "5")),
+        lesswrong_enabled=lesswrong_enabled,
+        rss_feed_urls=rss_feed_urls,
+        rss_items_per_feed=int(os.getenv("RSS_ITEMS_PER_FEED", "5")),
     )
