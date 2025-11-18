@@ -10,7 +10,7 @@ A powerful CLI tool for managing your daily Obsidian notes with AI-powered knowl
 
 ## Prerequisites
 
-- Node.js 18+ and npm
+- Python 3.8 or higher
 - An Obsidian vault with a daily notes folder
 - Anthropic API key (for Claude AI)
 
@@ -24,20 +24,20 @@ cd notes-fixer
 
 2. Install dependencies:
 ```bash
-npm install
+pip install -r requirements.txt
 ```
 
-3. Build the project:
+Or install as a package:
 ```bash
-npm run build
+pip install -e .
 ```
 
-4. Create a `.env` file based on `.env.example`:
+3. Create a `.env` file based on `.env.example`:
 ```bash
 cp .env.example .env
 ```
 
-5. Configure your `.env` file with your settings:
+4. Configure your `.env` file with your settings:
 ```env
 ANTHROPIC_API_KEY=your_api_key_here
 OBSIDIAN_VAULT_PATH=/path/to/your/obsidian/vault
@@ -54,13 +54,13 @@ LESSWRONG_POST_COUNT=5
 Process recent notes and add LessWrong posts in one command:
 
 ```bash
-npm start run
+notes-fixer run
 ```
 
-Or using the compiled binary:
+Or if you didn't install the package:
 
 ```bash
-node dist/index.js run
+python -m notes_fixer run
 ```
 
 ### Extract Knowledge Only
@@ -68,7 +68,7 @@ node dist/index.js run
 Only extract knowledge from recent daily notes:
 
 ```bash
-npm start extract-knowledge
+notes-fixer extract-knowledge
 ```
 
 ### LessWrong Posts Only
@@ -76,7 +76,7 @@ npm start extract-knowledge
 Only fetch and add LessWrong posts to today's note:
 
 ```bash
-npm start lesswrong
+notes-fixer lesswrong
 ```
 
 ## Setting Up Daily Automation
@@ -90,12 +90,17 @@ crontab -e
 
 2. Add a line to run the tool daily (example: every day at 9 AM):
 ```bash
-0 9 * * * cd /path/to/notes-fixer && /usr/bin/node dist/index.js run >> /tmp/notes-fixer.log 2>&1
+0 9 * * * cd /path/to/notes-fixer && /usr/bin/python3 -m notes_fixer run >> /tmp/notes-fixer.log 2>&1
+```
+
+Or if you installed the package:
+```bash
+0 9 * * * cd /path/to/notes-fixer && /usr/bin/notes-fixer run >> /tmp/notes-fixer.log 2>&1
 ```
 
 Make sure to:
 - Replace `/path/to/notes-fixer` with the actual path
-- Replace `/usr/bin/node` with your Node.js path (find it with `which node`)
+- Replace `/usr/bin/python3` with your Python path (find it with `which python3`)
 - Ensure your `.env` file is properly configured
 
 ## How It Works
@@ -129,18 +134,18 @@ Make sure to:
 
 ```
 notes-fixer/
-├── src/
-│   ├── index.ts           # Main CLI entry point
-│   ├── config.ts          # Configuration loader
-│   ├── types.ts           # TypeScript type definitions
-│   ├── notesReader.ts     # Daily notes reader and file operations
-│   ├── aiProcessor.ts     # AI-powered knowledge extraction
-│   └── lesswrong.ts       # LessWrong API integration
-├── dist/                  # Compiled JavaScript (generated)
+├── notes_fixer/
+│   ├── __init__.py        # Package initialization
+│   ├── __main__.py        # Main CLI entry point
+│   ├── config.py          # Configuration loader
+│   ├── types.py           # Data models and types
+│   ├── notes_reader.py    # Daily notes reader and file operations
+│   ├── ai_processor.py    # AI-powered knowledge extraction
+│   └── lesswrong.py       # LessWrong API integration
 ├── .env                   # Your configuration (create from .env.example)
 ├── .env.example           # Configuration template
-├── package.json
-├── tsconfig.json
+├── requirements.txt       # Python dependencies
+├── setup.py               # Package setup
 └── README.md
 ```
 
@@ -157,22 +162,22 @@ notes-fixer/
 
 ## Development
 
-Run in development mode with auto-reload:
+Run the tool directly without installation:
 
 ```bash
-npm run dev
+python -m notes_fixer run
 ```
 
-Build the project:
+Install in editable mode for development:
 
 ```bash
-npm run build
+pip install -e .
 ```
 
-Watch mode (auto-rebuild on changes):
+Run tests (if you add them):
 
 ```bash
-npm run watch
+python -m pytest
 ```
 
 ## Troubleshooting
