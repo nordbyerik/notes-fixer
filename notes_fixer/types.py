@@ -8,7 +8,8 @@ from typing import Optional
 @dataclass
 class Config:
     """Configuration for the notes fixer tool."""
-    anthropic_api_key: str
+    ai_model: str
+    ai_api_key: Optional[str]
     vault_path: str
     daily_notes_folder: str
     knowledge_repo_folder: str

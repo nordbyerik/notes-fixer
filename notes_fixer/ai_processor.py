@@ -1,18 +1,31 @@
 """AI processor for extracting knowledge and summarizing content."""
 
 import json
+import os
 import re
 from typing import List
-from anthropic import Anthropic
+from litellm import completion
 from .types import Config, DailyNote, KnowledgeItem
 
 
 class AIProcessor:
-    """Handles AI-powered processing using Claude."""
+    """Handles AI-powered processing using any LLM provider."""
 
     def __init__(self, config: Config):
         self.config = config
-        self.client = Anthropic(api_key=config.anthropic_api_key)
+        self.model = config.ai_model
+
+        # Set API key as environment variable for LiteLLM
+        if config.ai_api_key:
+            # LiteLLM automatically detects the provider from the model name
+            # and uses the appropriate env var (ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)
+            if config.ai_model.startswith("claude"):
+                os.environ["ANTHROPIC_API_KEY"] = config.ai_api_key
+            elif config.ai_model.startswith("gpt"):
+                os.environ["OPENAI_API_KEY"] = config.ai_api_key
+            else:
+                # For other providers, set a generic API key
+                os.environ["LITELLM_API_KEY"] = config.ai_api_key
 
     def extract_knowledge_from_notes(self, notes: List[DailyNote]) -> List[KnowledgeItem]:
         """Extract knowledge items from daily notes using AI."""
@@ -42,13 +55,13 @@ Only extract items that are genuinely interesting or valuable. Skip mundane dail
 If there are no important items to extract, return an empty array."""
 
             try:
-                message = self.client.messages.create(
-                    model="claude-sonnet-4-20250514",
-                    max_tokens=4096,
+                response = completion(
+                    model=self.model,
                     messages=[{"role": "user", "content": prompt}],
+                    max_tokens=4096,
                 )
 
-                response_text = message.content[0].text
+                response_text = response.choices[0].message.content
 
                 # Extract JSON from response (handle both raw JSON and markdown code blocks)
                 json_str = response_text.strip()
@@ -92,13 +105,13 @@ Content:
 Focus on the key insights and main points. Keep it brief and informative."""
 
         try:
-            message = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=500,
+            response = completion(
+                model=self.model,
                 messages=[{"role": "user", "content": prompt}],
+                max_tokens=500,
             )
 
-            summary = message.content[0].text.strip()
+            summary = response.choices[0].message.content.strip()
             return summary
         except Exception as e:
             print(f'Error summarizing post "{title}": {e}')

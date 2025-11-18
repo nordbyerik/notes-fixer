@@ -6,13 +6,14 @@ A powerful CLI tool for managing your daily Obsidian notes with AI-powered knowl
 
 - **AI-Powered Knowledge Extraction**: Automatically extracts important insights, events, and learnings from your daily notes and organizes them into a knowledge repository
 - **LessWrong Integration**: Fetches top posts from LessWrong and adds AI-generated summaries to your daily notes
+- **Model Agnostic**: Use any LLM provider (Claude, GPT, local models via Ollama, etc.) - easily swap models without code changes
 - **Automated Daily Workflow**: Designed to run once per day (via cron) to keep your knowledge base up-to-date
 
 ## Prerequisites
 
 - Python 3.8 or higher
 - An Obsidian vault with a daily notes folder
-- Anthropic API key (for Claude AI)
+- API key for your chosen AI provider (Anthropic, OpenAI, etc.) OR a local model setup (Ollama)
 
 ## Installation
 
@@ -39,13 +40,19 @@ cp .env.example .env
 
 4. Configure your `.env` file with your settings:
 ```env
-ANTHROPIC_API_KEY=your_api_key_here
+# AI Model (defaults to Claude Sonnet 4)
+AI_MODEL=claude-sonnet-4-20250514
+AI_API_KEY=your_api_key_here
+
+# Obsidian Configuration
 OBSIDIAN_VAULT_PATH=/path/to/your/obsidian/vault
 DAILY_NOTES_FOLDER=Daily Notes
 KNOWLEDGE_REPO_FOLDER=Knowledge Base
 LOOKBACK_DAYS=1
 LESSWRONG_POST_COUNT=5
 ```
+
+See the [AI Model Configuration](#ai-model-configuration) section for all supported models.
 
 ## Usage
 
@@ -108,7 +115,7 @@ Make sure to:
 ### Knowledge Extraction
 
 1. Reads daily notes from the specified lookback period (default: 1 day)
-2. Uses Claude AI to analyze each note and extract:
+2. Uses your configured AI model to analyze each note and extract:
    - Important ideas
    - Notable events
    - Key learnings
@@ -126,7 +133,7 @@ Make sure to:
 ### LessWrong Integration
 
 1. Fetches top recent posts from LessWrong using their GraphQL API
-2. Generates concise summaries of each post using Claude AI
+2. Generates concise summaries of each post using your configured AI model
 3. Adds summaries to a "Daily News" section in today's daily note
 4. Includes links, authors, and scores for each post
 
@@ -153,12 +160,75 @@ notes-fixer/
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key | (required) |
+| `AI_MODEL` | AI model to use (see AI Model Configuration below) | `claude-sonnet-4-20250514` |
+| `AI_API_KEY` | API key for cloud providers (not needed for local models) | (required for cloud) |
+| `ANTHROPIC_API_KEY` | Legacy: Anthropic API key (use `AI_API_KEY` instead) | - |
 | `OBSIDIAN_VAULT_PATH` | Absolute path to your Obsidian vault | (required) |
 | `DAILY_NOTES_FOLDER` | Folder containing daily notes | `Daily Notes` |
 | `KNOWLEDGE_REPO_FOLDER` | Folder for knowledge repository | `Knowledge Base` |
 | `LOOKBACK_DAYS` | Number of days to look back for new notes | `1` |
 | `LESSWRONG_POST_COUNT` | Number of LessWrong posts to fetch | `5` |
+
+## AI Model Configuration
+
+This tool uses [LiteLLM](https://github.com/BerriAI/litellm) to provide a unified interface for multiple AI providers. You can easily swap between different models by changing the `AI_MODEL` environment variable.
+
+### Supported Providers
+
+**Anthropic (Claude)**
+```env
+AI_MODEL=claude-sonnet-4-20250514
+AI_API_KEY=your_anthropic_api_key
+```
+
+Other Claude models:
+- `claude-3-5-sonnet-20241022`
+- `claude-3-opus-20240229`
+- `claude-3-haiku-20240307`
+
+**OpenAI (GPT)**
+```env
+AI_MODEL=gpt-4o
+AI_API_KEY=your_openai_api_key
+```
+
+Other GPT models:
+- `gpt-4-turbo`
+- `gpt-4`
+- `gpt-3.5-turbo`
+
+**Local Models (Ollama)**
+
+No API key required! Just install [Ollama](https://ollama.ai/) and run a model:
+
+```bash
+ollama pull llama3
+# or: ollama pull mistral, ollama pull codellama, etc.
+```
+
+Then configure:
+```env
+AI_MODEL=ollama/llama3
+# No AI_API_KEY needed for local models!
+```
+
+**Other Providers**
+
+LiteLLM supports 100+ LLM providers including:
+- Google (Gemini): `gemini/gemini-pro`
+- Cohere: `cohere/command-r-plus`
+- AWS Bedrock: `bedrock/anthropic.claude-v2`
+- Azure OpenAI: `azure/<deployment-name>`
+- And many more...
+
+See the [LiteLLM docs](https://docs.litellm.ai/docs/providers) for the complete list.
+
+### Why Model Agnostic?
+
+- **Cost optimization**: Easily switch to cheaper models for less critical tasks
+- **Privacy**: Use local models (Ollama) to keep your notes completely private
+- **Experimentation**: Try different models to see which works best for your use case
+- **Future-proof**: New models supported automatically through LiteLLM updates
 
 ## Development
 
